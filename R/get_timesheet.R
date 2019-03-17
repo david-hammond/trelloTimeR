@@ -25,11 +25,12 @@ get_timesheet <- function(my_boards, token){
 
       cards$due = as.Date(cards$due)
 
-      due_dates[[my_boards$name[i]]] = cards
+
 
       actions = get_status_updates(idb, token)
 
       tmp = left_join(cards, actions)
+      due_dates[[my_boards$name[i]]] = tmp
       timespent = tmp %>%
         group_by(name) %>%
         arrange(desc(status_date)) %>%
