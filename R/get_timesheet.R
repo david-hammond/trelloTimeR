@@ -14,6 +14,7 @@
 get_timesheet <- function(my_boards, token){
   cal <- bizdays::create.calendar("normal", weekdays = c("saturday", "sunday"))
   current = list()
+  due_dates = list()
   for(i in 1:nrow(my_boards)){
     idb <- get_id_board(url = my_boards$url[i], token = token)
     cards = get_board_cards(idb, token) %>%
@@ -23,6 +24,8 @@ get_timesheet <- function(my_boards, token){
       cards = add_staff(cards, "idMembers", idb, token)
 
       cards$due = as.Date(cards$due)
+
+      due_dates[[my_boards$name[i]]] = cards
 
       actions = get_status_updates(idb, token)
 
@@ -51,17 +54,18 @@ get_timesheet <- function(my_boards, token){
 
   current = current %>%
     tidyr::gather(type, date, c(start, end)) %>%
-    select(-c(type, days_spent, status)) %>% mutate(date = as.Date(date))
+    select(-c(due, type, days_spent, status)) %>% mutate(date = as.Date(date))
 
-  current = padr::pad(current, by = "date", group = c("project", "name", "staff_name", "due"), interval = "day")
+  current = padr::pad(current, by = "date", group = c("project", "name", "staff_name"), interval = "day")
 
   current = current %>% group_by(date, staff_name) %>%
     mutate(n = length(unique(name))) %>%
     ungroup() %>%
-    group_by(staff_name, project, date, name, due) %>%
+    group_by(staff_name, project, date, name) %>%
     mutate(time_spent = 1/n) %>%
-    distinct() %>%
-    ungroup()
+    distinct()
 
+  due_dates = bind_rows(due_dates, .id = "project")
+  current = list(timesheet = current, due_dates = due_dates)
   return(current)
 }
