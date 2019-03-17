@@ -51,16 +51,17 @@ get_timesheet <- function(my_boards, token){
 
   current = current %>%
     tidyr::gather(type, date, c(start, end)) %>%
-    select(-c(due, type, days_spent, status)) %>% mutate(date = as.Date(date))
+    select(-c(type, days_spent, status)) %>% mutate(date = as.Date(date))
 
-  current = padr::pad(current, by = "date", group = c("project", "name", "staff_name"), interval = "day")
+  current = padr::pad(current, by = "date", group = c("project", "name", "staff_name", "due"), interval = "day")
 
   current = current %>% group_by(date, staff_name) %>%
     mutate(n = length(unique(name))) %>%
     ungroup() %>%
-    group_by(staff_name, project, date, name) %>%
+    group_by(staff_name, project, date, name, due) %>%
     mutate(time_spent = 1/n) %>%
-    distinct()
+    distinct() %>%
+    ungroup()
 
   return(current)
 }
