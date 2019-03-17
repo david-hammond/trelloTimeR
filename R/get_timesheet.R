@@ -60,7 +60,8 @@ get_timesheet <- function(my_boards, token){
     ungroup() %>%
     group_by(staff_name, project, date, name) %>%
     mutate(time_spent = 1/n) %>%
-    distinct()
+    distinct() %>%
+    filter(bizdays::is.bizday(current$date, 'normal'))
 
   return(current)
 }
